@@ -33,7 +33,8 @@ public class ZeroCopyTest {
 
     Transaction tx = env.createTransaction();
     Cursor cursor = db.openCursor(tx);
-    ByteBuffer buffer = ByteBuffer.allocateDirect(32);
+    // keySize + keyAddress + valSize + valAddress
+    ByteBuffer buffer = ByteBuffer.allocateDirect(Unsafe.ADDRESS_SIZE * 4);
     long address = ((DirectBuffer) buffer).address();
     JNI.mdb_cursor_get_address(cursor.pointer(), address, address + 2 * Unsafe.ADDRESS_SIZE, GetOp.FIRST.getValue());
 
