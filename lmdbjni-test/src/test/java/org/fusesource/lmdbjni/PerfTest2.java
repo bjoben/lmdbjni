@@ -9,8 +9,20 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class PerfTest2 {
+    static ByteBuffer buffer;
+    static long address;
+    static Cursor cursor;
+    static {
+        buffer = ByteBuffer.allocateDirect(Unsafe.ADDRESS_SIZE * 4);
+        address = ((sun.nio.ch.DirectBuffer) buffer).address();
+        Transaction tx = Setup.env.createTransaction();
+        cursor = Setup.database.openCursor(tx);
+    }
+    public static DirectBuffer key = new DirectBuffer(0, 0);
+    public static DirectBuffer value = new DirectBuffer(0, 0);
 
     @Test
     public void test() throws RunnerException {
@@ -26,15 +38,23 @@ public class PerfTest2 {
         new Runner(options).run();
     }
 
-    public static int rc;
+    public static int rc = JNI.MDB_NOTFOUND;
 
     @GenerateMicroBenchmark
     public void mdb_cursor_get_address() throws IOException {
         if (rc == JNI.MDB_NOTFOUND) {
-            rc = JNI.mdb_cursor_get_address(Setup.cursor.pointer(), 0, 0, JNI.MDB_FIRST);
+            rc = cursor.position(key, value, GetOp.FIRST);
+            // de-serialize key/value to make the test more realistic
+            key.getLong(0);
+            value.getLong(0);
+            // rc = JNI.mdb_cursor_get_address(cursor.pointer(), address, address + 2 * Unsafe.ADDRESS_SIZE, JNI.MDB_FIRST);
         } else {
             Util.checkErrorCode(rc);
-            rc = JNI.mdb_cursor_get_address(Setup.cursor.pointer(), 0, 0, JNI.MDB_NEXT);
+            rc = cursor.position(key, value, GetOp.NEXT);
+            // de-serialize key/value to make the test more realistic
+            key.getLong(0);
+            value.getLong(0);
+            //rc = JNI.mdb_cursor_get_address(cursor.pointer(), address, address + 2 * Unsafe.ADDRESS_SIZE, JNI.MDB_NEXT);
         }
     }
 }

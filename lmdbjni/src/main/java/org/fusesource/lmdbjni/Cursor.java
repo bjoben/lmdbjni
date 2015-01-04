@@ -20,6 +20,7 @@ package org.fusesource.lmdbjni;
 
 
 import java.io.Closeable;
+import java.nio.ByteBuffer;
 
 import static org.fusesource.lmdbjni.JNI.*;
 import static org.fusesource.lmdbjni.Util.checkArgNotNull;
@@ -29,6 +30,8 @@ import static org.fusesource.lmdbjni.Util.checkErrorCode;
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public class Cursor extends NativeObject implements Closeable {
+    ByteBuffer buffer;
+    long bufferAddress;
 
     Cursor(long self) {
         super(self);
@@ -52,11 +55,29 @@ public class Cursor extends NativeObject implements Closeable {
         Value key = new Value();
         Value value = new Value();
         int rc = mdb_cursor_get(pointer(), key, value, op.getValue());
-        if( rc == MDB_NOTFOUND ) {
+        if (rc == MDB_NOTFOUND ) {
             return null;
         }
         checkErrorCode(rc);
         return new Entry(key.toByteArray(), value.toByteArray());
+    }
+
+    public int position(DirectBuffer key, DirectBuffer value, GetOp op) {
+        if (buffer == null) {
+            buffer = ByteBuffer.allocateDirect(Unsafe.ADDRESS_SIZE * 4);
+            bufferAddress = ((sun.nio.ch.DirectBuffer) buffer).address();
+        }
+        checkArgNotNull(op, "op");
+        int rc = mdb_cursor_get_address(pointer(), bufferAddress, bufferAddress + 2 * Unsafe.ADDRESS_SIZE, op.getValue());
+        if (rc == MDB_NOTFOUND) {
+            return rc;
+        }
+        checkErrorCode(rc);
+        int keySize = (int) Unsafe.UNSAFE.getLong(bufferAddress);
+        key.wrap(Unsafe.UNSAFE.getAddress(bufferAddress + Unsafe.ADDRESS_SIZE * 1), keySize);
+        int valSize = (int) Unsafe.UNSAFE.getLong(bufferAddress + Unsafe.ADDRESS_SIZE * 2);
+        value.wrap(Unsafe.UNSAFE.getAddress(bufferAddress + Unsafe.ADDRESS_SIZE * 3), valSize);
+        return rc;
     }
 
     public Entry seek(SeekOp op, byte[] key) {

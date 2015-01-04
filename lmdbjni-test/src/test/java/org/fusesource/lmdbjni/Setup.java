@@ -6,10 +6,9 @@ public class Setup {
     public static File dir = new File("/tmp/test");
     public static Database database;
     public static Env env = new Env();
-    public static Transaction tx;
-    public static Cursor cursor;
     public static JNI.MDB_val valueVal;
     public static JNI.MDB_val keyVal;
+
     static {
         valueVal = new JNI.MDB_val();
         keyVal = new JNI.MDB_val();
@@ -17,9 +16,8 @@ public class Setup {
         env.open(dir.getAbsolutePath());
         database = env.openDatabase("test");
         for (int i = 0; i < 1000; i++) {
-            database.put(Bytes.fromLong(i), Bytes.fromLong(i));
+            long v = Long.reverseBytes(i);
+            database.put(Bytes.fromLong(v), Bytes.fromLong(v));
         }
-        tx = env.createTransaction();
-        cursor = database.openCursor(tx);
     }
 }

@@ -24,16 +24,50 @@ public class PerfTest1 {
                 .build();
         new Runner(options).run();
     }
+    static Cursor cursor;
 
-    public static int rc;
+    static {
+        Transaction tx = Setup.env.createTransaction();
+        cursor = Setup.database.openCursor(tx);
+    }
+
+    public static int rc = JNI.MDB_NOTFOUND;
+
+
+    @GenerateMicroBenchmark
+    public void mdb_cursor_get_with_deserialization() throws IOException {
+        if (rc == JNI.MDB_NOTFOUND) {
+            Entry entry = cursor.get(GetOp.FIRST);
+            // de-serialize key/value to make the test more realistic
+            Bytes.getLong(entry.getKey(), 0);
+            Bytes.getLong(entry.getValue(), 0);
+        } else {
+            Util.checkErrorCode(rc);
+            Entry entry = cursor.get(GetOp.NEXT);
+            // de-serialize key/value to make the test more realistic
+            Bytes.getLong(entry.getKey(), 0);
+            Bytes.getLong(entry.getValue(), 0);
+        }
+    }
+
+    @GenerateMicroBenchmark
+    public void mdb_cursor_get_without_deserialization() throws IOException {
+        if (rc == JNI.MDB_NOTFOUND) {
+            cursor.get(GetOp.FIRST);
+        } else {
+            Util.checkErrorCode(rc);
+            cursor.get(GetOp.NEXT);
+        }
+    }
 
     @GenerateMicroBenchmark
     public void mdb_cursor_get() throws IOException {
         if (rc == JNI.MDB_NOTFOUND) {
-            rc = JNI.mdb_cursor_get(Setup.cursor.pointer(), Setup.keyVal, Setup.valueVal, JNI.MDB_FIRST);
+            rc = JNI.mdb_cursor_get(cursor.pointer(), Setup.keyVal, Setup.valueVal, JNI.MDB_FIRST);
         } else {
             Util.checkErrorCode(rc);
-            rc = JNI.mdb_cursor_get(Setup.cursor.pointer(), Setup.keyVal, Setup.valueVal, JNI.MDB_NEXT);
+            rc = JNI.mdb_cursor_get(cursor.pointer(), Setup.keyVal, Setup.valueVal, JNI.MDB_NEXT);
         }
     }
+
 }
