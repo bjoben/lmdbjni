@@ -16,16 +16,13 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
-public class PerfTest2 {
-    static ByteBuffer buffer;
-    static long address;
+public class PerfTest2 extends Setup {
     static Cursor cursor;
     static {
-        buffer = ByteBuffer.allocateDirect(Unsafe.ADDRESS_SIZE * 4);
-        address = ((sun.nio.ch.DirectBuffer) buffer).address();
-        Transaction tx = Setup.env.createTransaction();
-        cursor = Setup.database.openCursor(tx);
+        Transaction tx = env.createTransaction();
+        cursor = database.openCursor(tx);
     }
+
     public static DirectBuffer key = new DirectBuffer(0, 0);
     public static DirectBuffer value = new DirectBuffer(0, 0);
 

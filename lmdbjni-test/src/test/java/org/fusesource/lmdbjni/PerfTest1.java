@@ -14,7 +14,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-public class PerfTest1 {
+public class PerfTest1 extends Setup {
     @Test
     public void test() throws RunnerException {
         Options options = new OptionsBuilder()
@@ -31,8 +31,8 @@ public class PerfTest1 {
     static Cursor cursor;
 
     static {
-        Transaction tx = Setup.env.createTransaction();
-        cursor = Setup.database.openCursor(tx);
+        Transaction tx = env.createTransaction();
+        cursor = database.openCursor(tx);
     }
 
     public static int rc = JNI.MDB_NOTFOUND;

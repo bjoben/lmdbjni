@@ -16,12 +16,10 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class PerfTest4 {
-    static Cursor cursor;
+public class PerfTest4 extends Setup {
     static Transaction tx;
     static {
-        tx = Setup.env.createTransaction();
-        cursor = Setup.database.openCursor(tx);
+        tx = env.createTransaction();
     }
 
     @Test
@@ -44,6 +42,6 @@ public class PerfTest4 {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void mdb_cursor_put() throws IOException {
-        Setup.database.put(tx, Bytes.fromLong(counter.incrementAndGet()), Bytes.fromLong(counter.get()));
+        database.put(tx, Bytes.fromLong(counter.incrementAndGet()), Bytes.fromLong(counter.get()));
     }
 }

@@ -16,12 +16,13 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class PerfTest3 {
+public class PerfTest3 extends Setup {
     static Cursor cursor;
     static Transaction tx;
+
     static {
-        tx = Setup.env.createTransaction();
-        cursor = Setup.database.openCursor(tx);
+        tx = env.createTransaction();
+        cursor = database.openCursor(tx);
     }
     public static DirectBuffer key = new DirectBuffer(ByteBuffer.allocateDirect(8));
     public static DirectBuffer value = new DirectBuffer(ByteBuffer.allocateDirect(8));
@@ -48,6 +49,6 @@ public class PerfTest3 {
     public void mdb_cursor_put_address() throws IOException {
         key.putLong(0, counter.incrementAndGet());
         value.putLong(0, counter.get());
-        Setup.database.put(tx, key, value);
+        database.put(tx, key, value);
     }
 }
