@@ -56,10 +56,10 @@ public class Transaction extends NativeObject {
         }
     }
 
-    DirectBuffer getBuffer() {
+    long getBufferAddress() {
         if (buffer == null) {
             buffer = new DirectBuffer(ByteBuffer.allocateDirect(Unsafe.ADDRESS_SIZE * 4));
         }
-        return buffer;
+        return buffer.addressOffset();
     }
 }

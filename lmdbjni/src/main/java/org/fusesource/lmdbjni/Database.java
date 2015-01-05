@@ -93,13 +93,14 @@ public class Database extends NativeObject implements Closeable {
     public int get(Transaction tx, DirectBuffer key, DirectBuffer value) {
         checkArgNotNull(key, "key");
         checkArgNotNull(value, "value");
-        DirectBuffer buffer = tx.getBuffer();
-        buffer.putLong(0, key.capacity());
-        buffer.putLong(Unsafe.ADDRESS_SIZE * 1, key.addressOffset());
-        int rc = mdb_get_address(tx.pointer(), pointer(), buffer.addressOffset(), buffer.addressOffset() + 2 * Unsafe.ADDRESS_SIZE);
+        long address = tx.getBufferAddress();
+        Unsafe.putLong(address, 0, key.capacity());
+        Unsafe.putLong(address, 1, key.addressOffset());
+
+        int rc = mdb_get_address(tx.pointer(), pointer(), address, address + 2 * Unsafe.ADDRESS_SIZE);
         checkErrorCode(rc);
-        int valSize = (int) Unsafe.getLong(buffer, 2);
-        long valAddress = Unsafe.getAddress(buffer, 3);
+        int valSize = (int) Unsafe.getLong(address, 2);
+        long valAddress = Unsafe.getAddress(address, 3);
         value.wrap(valAddress, valSize);
         return rc;
     }
@@ -160,13 +161,13 @@ public class Database extends NativeObject implements Closeable {
     public int put(Transaction tx, DirectBuffer key, DirectBuffer value, int flags) {
         checkArgNotNull(key, "key");
         checkArgNotNull(value, "value");
-        DirectBuffer buffer = tx.getBuffer();
-        buffer.putLong(0, key.capacity());
-        buffer.putLong(Unsafe.ADDRESS_SIZE * 1, key.addressOffset());
-        buffer.putLong(Unsafe.ADDRESS_SIZE * 2, value.capacity());
-        buffer.putLong(Unsafe.ADDRESS_SIZE * 3, value.addressOffset());
+        long address = tx.getBufferAddress();
+        Unsafe.putLong(address, 0, key.capacity());
+        Unsafe.putLong(address, 1, key.addressOffset());
+        Unsafe.putLong(address, 2, value.capacity());
+        Unsafe.putLong(address, 3, value.addressOffset());
 
-        int rc = mdb_put_address(tx.pointer(), pointer(), buffer.addressOffset(), buffer.addressOffset() + 2 * Unsafe.ADDRESS_SIZE, flags);
+        int rc = mdb_put_address(tx.pointer(), pointer(), address, address + 2 * Unsafe.ADDRESS_SIZE, flags);
         checkErrorCode(rc);
         return rc;
     }

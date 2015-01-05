@@ -73,10 +73,10 @@ public class Cursor extends NativeObject implements Closeable {
             return rc;
         }
         checkErrorCode(rc);
-        int keySize = (int) buffer.getLong(0);
-        key.wrap(Unsafe.getAddress(buffer, 1), keySize);
-        int valSize = (int) buffer.getLong(Unsafe.ADDRESS_SIZE * 2);
-        value.wrap(Unsafe.getAddress(buffer, 3), valSize);
+        int keySize = (int) Unsafe.getLong(bufferAddress, 0);
+        key.wrap(Unsafe.getAddress(bufferAddress, 1), keySize);
+        int valSize = (int) Unsafe.getLong(bufferAddress, 2);
+        value.wrap(Unsafe.getAddress(bufferAddress, 3), valSize);
         return rc;
     }
 
@@ -122,10 +122,10 @@ public class Cursor extends NativeObject implements Closeable {
             buffer = new DirectBuffer(ByteBuffer.allocateDirect(Unsafe.ADDRESS_SIZE * 4));
             bufferAddress = buffer.addressOffset();
         }
-        buffer.putLong(0, key.capacity());
-        buffer.putLong(Unsafe.ADDRESS_SIZE * 1, key.addressOffset());
-        buffer.putLong(Unsafe.ADDRESS_SIZE * 2, value.capacity());
-        buffer.putLong(Unsafe.ADDRESS_SIZE * 3, value.addressOffset());
+        Unsafe.putLong(bufferAddress, 0, key.capacity());
+        Unsafe.putLong(bufferAddress, 1, key.addressOffset());
+        Unsafe.putLong(bufferAddress, 2, value.capacity());
+        Unsafe.putLong(bufferAddress, 3, value.addressOffset());
 
         int rc = mdb_cursor_put_address(pointer(), bufferAddress, bufferAddress + 2 * Unsafe.ADDRESS_SIZE, flags);
         checkErrorCode(rc);

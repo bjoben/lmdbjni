@@ -27,11 +27,15 @@ public class Unsafe {
         ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
     }
 
-    public static long getAddress(DirectBuffer buffer, int offset) {
-        return Unsafe.UNSAFE.getAddress(buffer.addressOffset() + Unsafe.ADDRESS_SIZE * offset);
+    public static long getAddress(long address, int offset) {
+        return Unsafe.UNSAFE.getAddress(address + Unsafe.ADDRESS_SIZE * offset);
     }
 
-    public static long getLong(DirectBuffer buffer, int offset) {
-        return Unsafe.UNSAFE.getLong(buffer.addressOffset() + Unsafe.ADDRESS_SIZE * offset);
+    public static long getLong(long address, int offset) {
+        return Unsafe.UNSAFE.getLong(address + Unsafe.ADDRESS_SIZE * offset);
+    }
+
+    public static void putLong(long address, int offset, long value) {
+        UNSAFE.putLong(null, address + Unsafe.ADDRESS_SIZE * offset, value);
     }
 }
