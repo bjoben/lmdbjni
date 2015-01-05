@@ -21,6 +21,7 @@ package org.fusesource.lmdbjni;
 
 import java.io.Closeable;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import static org.fusesource.lmdbjni.JNI.*;
 import static org.fusesource.lmdbjni.Util.checkArgNotNull;
@@ -79,6 +80,30 @@ public class Cursor extends NativeObject implements Closeable {
         value.wrap(Unsafe.getAddress(bufferAddress, 3), valSize);
         return rc;
     }
+
+    public int seekPosition(DirectBuffer key, DirectBuffer value, SeekOp op) {
+        checkArgNotNull(key, "key");
+        checkArgNotNull(value, "value");
+        checkArgNotNull(op, "op");
+        if (buffer == null) {
+            buffer = new DirectBuffer(ByteBuffer.allocateDirect(Unsafe.ADDRESS_SIZE * 4));
+            bufferAddress = buffer.addressOffset();
+        }
+        Unsafe.putLong(bufferAddress, 0, key.capacity());
+        Unsafe.putLong(bufferAddress, 1, key.addressOffset());
+
+        int rc = mdb_cursor_get_address(pointer(), bufferAddress, bufferAddress + 2 * Unsafe.ADDRESS_SIZE, op.getValue());
+        if (rc == MDB_NOTFOUND) {
+            return rc;
+        }
+        checkErrorCode(rc);
+        int keySize = (int) Unsafe.getLong(bufferAddress, 0);
+        key.wrap(Unsafe.getAddress(bufferAddress, 1), keySize);
+        int valSize = (int) Unsafe.getLong(bufferAddress, 2);
+        value.wrap(Unsafe.getAddress(bufferAddress, 3), valSize);
+        return rc;
+    }
+
 
     public Entry seek(SeekOp op, byte[] key) {
         checkArgNotNull(key, "key");

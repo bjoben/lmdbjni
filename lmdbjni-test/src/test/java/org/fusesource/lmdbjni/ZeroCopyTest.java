@@ -69,9 +69,14 @@ public class ZeroCopyTest {
         Cursor cursor = db.openCursor(tx);
         cursor.put(k1, v1, 0);
         cursor.put(k2, v2, 0);
+        tx.commit();
+        cursor.close();
 
         DirectBuffer k = new DirectBuffer(0, 0);
         DirectBuffer v = new DirectBuffer(0, 0);
+
+        tx = env.createTransaction();
+        cursor = db.openCursor(tx);
 
         cursor.position(k, v, GetOp.FIRST);
         assertThat(k.getLong(0, ByteOrder.BIG_ENDIAN), is(14L));
@@ -80,6 +85,40 @@ public class ZeroCopyTest {
         cursor.position(k, v, GetOp.NEXT);
         assertThat(k.getLong(0, ByteOrder.BIG_ENDIAN), is(16L));
         assertThat(v.getLong(0), is(17L));
+    }
+
+
+    @Test
+    public void testCursorSeekRangeZeroCopy() throws Exception {
+        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(8);
+        k1.putLong(0, 18, ByteOrder.BIG_ENDIAN);
+        v1.putLong(0, 19);
+        k2.putLong(0, 20, ByteOrder.BIG_ENDIAN);
+        v2.putLong(0, 21);
+
+        Transaction tx = env.createTransaction();
+        Cursor cursor = db.openCursor(tx);
+        cursor.put(k1, v1, 0);
+        cursor.put(k2, v2, 0);
+        tx.commit();
+        cursor.close();
+
+        tx = env.createTransaction();
+        cursor = db.openCursor(tx);
+
+        DirectBuffer k = new DirectBuffer(byteBuffer);
+        DirectBuffer v = new DirectBuffer(0, 0);
+        k.putLong(0, 10, ByteOrder.BIG_ENDIAN);
+
+        cursor.seekPosition(k, v, SeekOp.RANGE);
+        assertThat(k.getLong(0, ByteOrder.BIG_ENDIAN), is(18L));
+        assertThat(v.getLong(0), is(19L));
+
+        k.wrap(byteBuffer);
+        k.putLong(0, 19, ByteOrder.BIG_ENDIAN);
+        cursor.seekPosition(k, v, SeekOp.RANGE);
+        assertThat(k.getLong(0, ByteOrder.BIG_ENDIAN), is(20L));
+        assertThat(v.getLong(0), is(21L));
     }
 
 }
