@@ -30,7 +30,7 @@ import static org.fusesource.lmdbjni.Util.checkErrorCode;
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public class Cursor extends NativeObject implements Closeable {
-    ByteBuffer buffer;
+    DirectBuffer buffer;
     long bufferAddress;
 
     Cursor(long self) {
@@ -64,8 +64,8 @@ public class Cursor extends NativeObject implements Closeable {
 
     public int position(DirectBuffer key, DirectBuffer value, GetOp op) {
         if (buffer == null) {
-            buffer = ByteBuffer.allocateDirect(Unsafe.ADDRESS_SIZE * 4);
-            bufferAddress = ((sun.nio.ch.DirectBuffer) buffer).address();
+            buffer = new DirectBuffer(ByteBuffer.allocateDirect(Unsafe.ADDRESS_SIZE * 4));
+            bufferAddress = buffer.addressOffset();
         }
         checkArgNotNull(op, "op");
         int rc = mdb_cursor_get_address(pointer(), bufferAddress, bufferAddress + 2 * Unsafe.ADDRESS_SIZE, op.getValue());
@@ -73,10 +73,10 @@ public class Cursor extends NativeObject implements Closeable {
             return rc;
         }
         checkErrorCode(rc);
-        int keySize = (int) Unsafe.UNSAFE.getLong(bufferAddress);
-        key.wrap(Unsafe.UNSAFE.getAddress(bufferAddress + Unsafe.ADDRESS_SIZE * 1), keySize);
-        int valSize = (int) Unsafe.UNSAFE.getLong(bufferAddress + Unsafe.ADDRESS_SIZE * 2);
-        value.wrap(Unsafe.UNSAFE.getAddress(bufferAddress + Unsafe.ADDRESS_SIZE * 3), valSize);
+        int keySize = (int) buffer.getLong(0);
+        key.wrap(Unsafe.getAddress(buffer, 1), keySize);
+        int valSize = (int) buffer.getLong(Unsafe.ADDRESS_SIZE * 2);
+        value.wrap(Unsafe.getAddress(buffer, 3), valSize);
         return rc;
     }
 
@@ -113,6 +113,23 @@ public class Cursor extends NativeObject implements Closeable {
         } finally {
             keyBuffer.delete();
         }
+    }
+
+    public int put(DirectBuffer key, DirectBuffer value, int flags) {
+        checkArgNotNull(key, "key");
+        checkArgNotNull(value, "value");
+        if (buffer == null) {
+            buffer = new DirectBuffer(ByteBuffer.allocateDirect(Unsafe.ADDRESS_SIZE * 4));
+            bufferAddress = buffer.addressOffset();
+        }
+        buffer.putLong(0, key.capacity());
+        buffer.putLong(Unsafe.ADDRESS_SIZE * 1, key.addressOffset());
+        buffer.putLong(Unsafe.ADDRESS_SIZE * 2, value.capacity());
+        buffer.putLong(Unsafe.ADDRESS_SIZE * 3, value.addressOffset());
+
+        int rc = mdb_cursor_put_address(pointer(), bufferAddress, bufferAddress + 2 * Unsafe.ADDRESS_SIZE, flags);
+        checkErrorCode(rc);
+        return rc;
     }
 
     private byte[] put(NativeBuffer keyBuffer, NativeBuffer valueBuffer, int flags) {

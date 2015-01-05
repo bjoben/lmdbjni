@@ -1,7 +1,10 @@
 package org.fusesource.lmdbjni;
 
 import org.junit.Test;
+import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.GenerateMicroBenchmark;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.output.OutputFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -10,6 +13,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.concurrent.TimeUnit;
 
 public class PerfTest2 {
     static ByteBuffer buffer;
@@ -41,18 +46,20 @@ public class PerfTest2 {
     public static int rc = JNI.MDB_NOTFOUND;
 
     @GenerateMicroBenchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void mdb_cursor_get_address() throws IOException {
         if (rc == JNI.MDB_NOTFOUND) {
             rc = cursor.position(key, value, GetOp.FIRST);
             // de-serialize key/value to make the test more realistic
-            key.getLong(0);
+            key.getLong(0, ByteOrder.BIG_ENDIAN);
             value.getLong(0);
             // rc = JNI.mdb_cursor_get_address(cursor.pointer(), address, address + 2 * Unsafe.ADDRESS_SIZE, JNI.MDB_FIRST);
         } else {
             Util.checkErrorCode(rc);
             rc = cursor.position(key, value, GetOp.NEXT);
             // de-serialize key/value to make the test more realistic
-            key.getLong(0);
+            key.getLong(0, ByteOrder.BIG_ENDIAN);
             value.getLong(0);
             //rc = JNI.mdb_cursor_get_address(cursor.pointer(), address, address + 2 * Unsafe.ADDRESS_SIZE, JNI.MDB_NEXT);
         }

@@ -20,6 +20,7 @@ package org.fusesource.lmdbjni;
 
 
 import java.io.Closeable;
+import java.nio.ByteBuffer;
 
 import static org.fusesource.lmdbjni.JNI.*;
 import static org.fusesource.lmdbjni.Util.checkArgNotNull;
@@ -79,6 +80,29 @@ public class Database extends NativeObject implements Closeable {
         }
     }
 
+    public int get(DirectBuffer key, DirectBuffer value) {
+        checkArgNotNull(key, "key");
+        Transaction tx = env.createTransaction(true);
+        try {
+            return get(tx, key, value);
+        } finally {
+            tx.commit();
+        }
+    }
+
+    public int get(Transaction tx, DirectBuffer key, DirectBuffer value) {
+        checkArgNotNull(key, "key");
+        checkArgNotNull(value, "value");
+        DirectBuffer buffer = tx.getBuffer();
+        buffer.putLong(0, key.capacity());
+        buffer.putLong(Unsafe.ADDRESS_SIZE * 1, key.addressOffset());
+        int rc = mdb_get_address(tx.pointer(), pointer(), buffer.addressOffset(), buffer.addressOffset() + 2 * Unsafe.ADDRESS_SIZE);
+        checkErrorCode(rc);
+        int valSize = (int) Unsafe.getLong(buffer, 2);
+        long valAddress = Unsafe.getAddress(buffer, 3);
+        value.wrap(valAddress, valSize);
+        return rc;
+    }
 
     public byte[] get(byte[] key) {
         checkArgNotNull(key, "key");
@@ -114,6 +138,39 @@ public class Database extends NativeObject implements Closeable {
         checkErrorCode(rc);
         return value.toByteArray();
     }
+
+    public int put(DirectBuffer key, DirectBuffer value) {
+        return put(key, value, 0);
+    }
+
+    public int put(DirectBuffer key, DirectBuffer value, int flags) {
+        checkArgNotNull(key, "key");
+        Transaction tx = env.createTransaction();
+        try {
+            return put(tx, key, value, flags);
+        } finally {
+            tx.commit();
+        }
+    }
+
+    public void put(Transaction tx, DirectBuffer key, DirectBuffer value) {
+        put(tx, key, value, 0);
+    }
+
+    public int put(Transaction tx, DirectBuffer key, DirectBuffer value, int flags) {
+        checkArgNotNull(key, "key");
+        checkArgNotNull(value, "value");
+        DirectBuffer buffer = tx.getBuffer();
+        buffer.putLong(0, key.capacity());
+        buffer.putLong(Unsafe.ADDRESS_SIZE * 1, key.addressOffset());
+        buffer.putLong(Unsafe.ADDRESS_SIZE * 2, value.capacity());
+        buffer.putLong(Unsafe.ADDRESS_SIZE * 3, value.addressOffset());
+
+        int rc = mdb_put_address(tx.pointer(), pointer(), buffer.addressOffset(), buffer.addressOffset() + 2 * Unsafe.ADDRESS_SIZE, flags);
+        checkErrorCode(rc);
+        return rc;
+    }
+
 
     public byte[] put(byte[] key, byte[] value) {
         return put(key, value, 0);

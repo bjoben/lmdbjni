@@ -1,7 +1,10 @@
 package org.fusesource.lmdbjni;
 
 import org.junit.Test;
+import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.GenerateMicroBenchmark;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.output.OutputFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -9,6 +12,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 public class PerfTest1 {
     @Test
@@ -35,6 +39,8 @@ public class PerfTest1 {
 
 
     @GenerateMicroBenchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void mdb_cursor_get_with_deserialization() throws IOException {
         if (rc == JNI.MDB_NOTFOUND) {
             Entry entry = cursor.get(GetOp.FIRST);
@@ -49,7 +55,7 @@ public class PerfTest1 {
             Bytes.getLong(entry.getValue(), 0);
         }
     }
-
+/*
     @GenerateMicroBenchmark
     public void mdb_cursor_get_without_deserialization() throws IOException {
         if (rc == JNI.MDB_NOTFOUND) {
@@ -69,5 +75,5 @@ public class PerfTest1 {
             rc = JNI.mdb_cursor_get(cursor.pointer(), Setup.keyVal, Setup.valueVal, JNI.MDB_NEXT);
         }
     }
-
+*/
 }

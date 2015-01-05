@@ -14,10 +14,11 @@ public class Setup {
         keyVal = new JNI.MDB_val();
         Maven.recreateDir(dir);
         env.open(dir.getAbsolutePath());
+        env.setMapSize(4_294_967_296L);
         database = env.openDatabase("test");
         for (int i = 0; i < 1000; i++) {
             long v = Long.reverseBytes(i);
-            database.put(Bytes.fromLong(v), Bytes.fromLong(v));
+            database.put(Bytes.fromLong(i), Bytes.fromLong(v));
         }
     }
 }

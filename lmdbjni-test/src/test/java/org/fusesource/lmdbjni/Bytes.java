@@ -1,6 +1,10 @@
 package org.fusesource.lmdbjni;
 
 public class Bytes {
+    public static long getLong(final byte[] b) {
+        return getLong(b, 0);
+    }
+
     public static long getLong(final byte[] b, final int offset) {
         return (b[offset + 0] & 0xFFL) << 56
                 | (b[offset + 1] & 0xFFL) << 48
