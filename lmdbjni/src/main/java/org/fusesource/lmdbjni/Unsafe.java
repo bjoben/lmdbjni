@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 
-public class Unsafe {
+class Unsafe {
     public static final sun.misc.Unsafe UNSAFE;
     public static final int ADDRESS_SIZE;
     public static final long ARRAY_BASE_OFFSET;
