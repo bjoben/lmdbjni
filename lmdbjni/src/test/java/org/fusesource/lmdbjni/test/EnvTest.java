@@ -18,18 +18,15 @@
 
 package org.fusesource.lmdbjni.test;
 
-import junit.framework.TestCase;
 import org.fusesource.lmdbjni.*;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.LinkedList;
 
-import static org.fusesource.lmdbjni.Constants.FIRST;
-import static org.fusesource.lmdbjni.Constants.NEXT;
+import static org.junit.Assert.*;
 import static org.fusesource.lmdbjni.Constants.*;
 
 /**
@@ -37,51 +34,51 @@ import static org.fusesource.lmdbjni.Constants.*;
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class EnvTest extends TestCase {
+public class EnvTest {
 
-    static public void assertEquals(byte[] arg1, byte[] arg2) {
-        assertTrue(Arrays.equals(arg1, arg2));
-    }
-
-    static File getTestDirectory(String name) throws IOException {
-        File rc = new File(new File("test-data"), name);
-        rc.mkdirs();
-        return rc;
-    }
+    @Rule
+    public TemporaryFolder tmp = new TemporaryFolder();
 
     @Test
     public void testCRUD() throws Exception {
-      addLibraryPath("/usr/local/lib" );
-        String path = getTestDirectory(getName()).getCanonicalPath();
-        Env env = new Env();
-        env.open(path);
-        Database db = env.openDatabase("foo");
+        String path = tmp.newFolder().getCanonicalPath();
+        try (Env env = new Env()) {
+            env.open(path);
+            try (Database db = env.openDatabase()) {
+                doTest(env, db);
+            }
+        }
+    }
 
+    private void doTest(Env env, Database db) {
         assertNull(db.put(bytes("Tampa"), bytes("green")));
         assertNull(db.put(bytes("London"), bytes("red")));
 
         assertNull(db.put(bytes("New York"), bytes("gray")));
         assertNull(db.put(bytes("New York"), bytes("blue")));
-        assertEquals(db.put(bytes("New York"), bytes("silver"), NOOVERWRITE), bytes("blue"));
+        assertArrayEquals(db.put(bytes("New York"), bytes("silver"), NOOVERWRITE), bytes("blue"));
 
-        assertEquals(db.get(bytes("Tampa")), bytes("green"));
-        assertEquals(db.get(bytes("London")), bytes("red"));
-        assertEquals(db.get(bytes("New York")), bytes("blue"));
-
+        assertArrayEquals(db.get(bytes("Tampa")), bytes("green"));
+        assertArrayEquals(db.get(bytes("London")), bytes("red"));
+        assertArrayEquals(db.get(bytes("New York")), bytes("blue"));
 
         Transaction tx = env.createTransaction();
-        Cursor cursor = db.openCursor(tx);
+        try {
+            // Lets verify cursoring works..
+            LinkedList<String> keys = new LinkedList<>();
+            LinkedList<String> values = new LinkedList<>();
 
-        // Lets verify cursoring works..
-        LinkedList<String> keys = new LinkedList<String>();
-        LinkedList<String> values = new LinkedList<String>();
-        for( Entry entry = cursor.get(FIRST); entry !=null; entry = cursor.get(NEXT) ) {
-            keys.add(string(entry.getKey()));
-            values.add(string(entry.getValue()));
+            try (Cursor cursor = db.openCursor(tx)) {
+                for (Entry entry = cursor.get(FIRST); entry != null; entry = cursor.get(NEXT)) {
+                    keys.add(string(entry.getKey()));
+                    values.add(string(entry.getValue()));
+                }
+            }
+            assertEquals(Arrays.asList(new String[] { "London", "New York", "Tampa" }), keys);
+            assertEquals(Arrays.asList(new String[] { "red", "blue", "green" }), values);
+        } finally {
+            tx.commit();
         }
-        tx.commit();
-        assertEquals(Arrays.asList(new String[]{"London", "New York", "Tampa"}), keys);
-        assertEquals(Arrays.asList(new String[]{"red", "blue", "green"}), values);
 
         assertTrue(db.delete(bytes("New York")));
         assertNull(db.get(bytes("New York")));
@@ -97,29 +94,5 @@ public class EnvTest extends TestCase {
         } catch (LMDBException e) {
             assertTrue(e.getErrorCode() > 0);
         }
-
-        db.close();
-        env.close();
     }
-  public static void addLibraryPath(String pathToAdd) throws Exception{
-    final Field usrPathsField = ClassLoader.class.getDeclaredField("usr_paths");
-    usrPathsField.setAccessible(true);
-
-    //get array of paths
-    final String[] paths = (String[])usrPathsField.get(null);
-
-    //check if the path to add is already present
-    for(String path : paths) {
-      if(path.equals(pathToAdd)) {
-        return;
-      }
-    }
-
-    //add the new path
-    final String[] newPaths = Arrays.copyOf(paths, paths.length + 1);
-    newPaths[newPaths.length-1] = pathToAdd;
-    usrPathsField.set(null, newPaths);
-  }
-
-
 }

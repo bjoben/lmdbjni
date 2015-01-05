@@ -38,4 +38,8 @@ public class Unsafe {
     public static void putLong(long address, int offset, long value) {
         UNSAFE.putLong(null, address + Unsafe.ADDRESS_SIZE * offset, value);
     }
+
+    public static void getBytes(long address, int index, byte[] key) {
+        UNSAFE.copyMemory(null, address + index, key, ARRAY_BASE_OFFSET, key.length);
+    }
 }
