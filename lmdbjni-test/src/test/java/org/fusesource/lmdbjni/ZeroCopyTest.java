@@ -35,7 +35,7 @@ public class ZeroCopyTest {
     }
 
     @Test
-    public void testPutAndGetAndDeleteZeroCopy() throws Exception {
+    public void testPutAndGetAndDelete() throws Exception {
         k1.putLong(0, 10, ByteOrder.BIG_ENDIAN);
         v1.putLong(0, 11);
         k2.putLong(0, 12, ByteOrder.BIG_ENDIAN);
@@ -59,7 +59,7 @@ public class ZeroCopyTest {
     }
 
     @Test
-    public void testCursorPutAndGetZeroCopy() throws Exception {
+    public void testCursorPutAndGet() throws Exception {
         k1.putLong(0, 14, ByteOrder.BIG_ENDIAN);
         v1.putLong(0, 15);
         k2.putLong(0, 16, ByteOrder.BIG_ENDIAN);
@@ -89,7 +89,7 @@ public class ZeroCopyTest {
 
 
     @Test
-    public void testCursorSeekRangeZeroCopy() throws Exception {
+    public void testCursorSeekRange() throws Exception {
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(8);
         k1.putLong(0, 18, ByteOrder.BIG_ENDIAN);
         v1.putLong(0, 19);
