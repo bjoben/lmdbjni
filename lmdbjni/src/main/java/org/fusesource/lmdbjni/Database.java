@@ -228,6 +228,15 @@ public class Database extends NativeObject implements Closeable {
         return delete(key, null);
     }
 
+    public boolean delete(Transaction tx, DirectBuffer key) {
+        checkArgNotNull(key, "key");
+        try {
+            return delete(tx, key, null);
+        } finally {
+            tx.commit();
+        }
+    }
+
     public boolean delete(DirectBuffer key, DirectBuffer value) {
         checkArgNotNull(key, "key");
         Transaction tx = env.createTransaction();
@@ -251,6 +260,15 @@ public class Database extends NativeObject implements Closeable {
 
     public boolean delete(byte[] key) {
         return delete(key, null);
+    }
+
+    public boolean delete(Transaction tx, byte[] key) {
+        checkArgNotNull(key, "key");
+        try {
+            return delete(tx, key, null);
+        } finally {
+            tx.commit();
+        }
     }
 
     public boolean delete(byte[] key, byte[] value) {
