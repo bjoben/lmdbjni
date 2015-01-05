@@ -35,7 +35,7 @@ public class ZeroCopyTest {
     }
 
     @Test
-    public void testPutAndGetZeroCopy() throws Exception {
+    public void testPutAndGetAndDeleteZeroCopy() throws Exception {
         k1.putLong(0, 10, ByteOrder.BIG_ENDIAN);
         v1.putLong(0, 11);
         k2.putLong(0, 12, ByteOrder.BIG_ENDIAN);
@@ -49,6 +49,13 @@ public class ZeroCopyTest {
         k.putLong(0, 10, ByteOrder.BIG_ENDIAN);
         db.get(k, v);
         assertThat(v.getLong(0), is(11L));
+
+        db.delete(k);
+        try {
+            db.get(k, v);
+        } catch (LMDBException e) {
+            assertThat(e.errorCode, is(LMDBException.NOTFOUND));
+        }
     }
 
     @Test
@@ -73,7 +80,6 @@ public class ZeroCopyTest {
         cursor.position(k, v, GetOp.NEXT);
         assertThat(k.getLong(0, ByteOrder.BIG_ENDIAN), is(16L));
         assertThat(v.getLong(0), is(17L));
-
     }
 
 }
